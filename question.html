@@ -21,27 +21,83 @@
 
   <script>
     const params = new URLSearchParams(location.search);
-    const sender = params.get('sender') || 'Someone';
-    const question = params.get('question') || '...';
-    document.getElementById('title').textContent = `${sender} wants to ask:`;
-    document.getElementById('questionText').textContent = question;
 
-    const area = document.getElementById('buttonArea');
-    const noBtn = document.getElementById('noBtn');
-    const yesBtn = document.getElementById('yesBtn');
+    // Helper to decode the payload param which is base64(JSON)
+    function decodePayload(b64) {
+      try {
+        const json = decodeURIComponent(escape(atob(b64)));
+        return JSON.parse(json);
+      } catch (e) {
+        return null;
+      }
+    }
 
-    // prepare area and button styles
-    area.style.position = 'relative';
-    noBtn.style.position = 'absolute';
-    noBtn.style.touchAction = 'manipulation';
+    let sender = '';
+    let question = '';
+    let cameFromLink = false;
+
+    if (params.has('payload')) {
+      const p = decodePayload(params.get('payload'));
+      if (p && (p.s || p.q)) {
+        sender = p.s || '';
+        question = p.q || '';
+        cameFromLink = true;
+      }
+    } else if (params.has('sender') || params.has('question')) {
+      // legacy behavior: plain params (or fallback)
+      sender = params.get('sender') || '';
+      question = params.get('question') || '';
+      cameFromLink = true;
+    }
+
+    if (cameFromLink) {
+      // Show the provided values but then clean the URL so details are not visible.
+      const who = sender || 'Someone';
+      document.getElementById('title').textContent = `${who} wants to ask:`;
+      document.getElementById('questionText').textContent = question || '';
+
+      try {
+        const cleanPath = location.pathname + (location.hash || '');
+        history.replaceState(null, '', cleanPath);
+      } catch (e) {
+        // ignore
+      }
+    } else {
+      const who = 'Someone';
+      document.getElementById('title').textContent = `${who} wants to ask:`;
+      document.getElementById('questionText').textContent = '...';
+    }
+
+  const area = document.getElementById('buttonArea');
+  const noBtn = document.getElementById('noBtn');
+  const yesBtn = document.getElementById('yesBtn');
+
+  // ensure container is a positioning context for when No becomes absolute
+  area.style.position = area.style.position || 'relative';
+  // don't change noBtn position yet — keep it in the normal flow until first interaction
+  noBtn.style.touchAction = 'manipulation';
 
     function moveNo() {
+      // If the No button is still in normal flow, switch it to absolute so we can move it freely
+      const wasStatic = getComputedStyle(noBtn).position !== 'absolute';
+      if (wasStatic) {
+        // compute current position to avoid jump: place absolute at the same visual location
+        const btnRect = noBtn.getBoundingClientRect();
+        const areaRect = area.getBoundingClientRect();
+        const relLeft = btnRect.left - areaRect.left;
+        const relTop = btnRect.top - areaRect.top;
+        noBtn.style.position = 'absolute';
+        noBtn.style.left = Math.round(relLeft) + 'px';
+        noBtn.style.top = Math.round(relTop) + 'px';
+        noBtn.style.transform = 'none';
+      }
+
       const areaRect = area.getBoundingClientRect();
-      const btnRect = noBtn.getBoundingClientRect();
+      const btnRect2 = noBtn.getBoundingClientRect();
       const yesRect = yesBtn.getBoundingClientRect();
 
-      const btnW = btnRect.width;
-      const btnH = btnRect.height;
+      const btnW = btnRect2.width;
+      const btnH = btnRect2.height;
 
       const maxX = Math.max(0, areaRect.width - btnW);
       const maxY = Math.max(0, areaRect.height - btnH);
@@ -72,13 +128,15 @@
       noBtn.style.transform = 'none';
     }
 
-    // Move on hover, touch, or click
+    // Move on hover, touch, or click — only then the No button becomes absolute and moves
     noBtn.addEventListener('mouseenter', moveNo);
     noBtn.addEventListener('click', (e) => { e.preventDefault(); moveNo(); });
     noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveNo(); }, {passive:false});
 
-    // Recompute on resize
-    window.addEventListener('resize', () => setTimeout(moveNo, 80));
+    // Recompute on resize (if No already absolute)
+    window.addEventListener('resize', () => setTimeout(() => {
+      if (getComputedStyle(noBtn).position === 'absolute') moveNo();
+    }, 80));
 
     yesBtn.addEventListener('click', () => {
       alert('Thanks for answering!');
@@ -100,8 +158,7 @@
         </div>`;
     });
 
-    // initial placement
-    window.addEventListener('load', () => setTimeout(moveNo, 10));
+  // initial placement: do nothing so buttons stay in normal flow until interaction
   </script>
 </body>
 </html>

@@ -45,9 +45,8 @@
   <script>
     // helper to get params and decode
     const params = new URLSearchParams(location.search);
-  // Hide any user details passed via URL: do not prefill from URL params
-  const initialSender = '';
-  const initialQuestion = '';
+    const initialSender = '';
+    const initialQuestion = params.get('question') || '';
 
   const preview = document.getElementById('preview');
   const askBtn = document.getElementById('askBtn');
@@ -73,11 +72,22 @@
 
     updateInvitePreview(senderInput.value || initialSender, questionInput.value || initialQuestion);
 
-    // Build a direct link to the question page (question.html) with encoded params.
+    // Build a direct link to the question page (question.html) with an encoded payload param.
+    // The payload is a base64-encoded JSON object {s, q}. The page will read and then remove
+    // the query string so the details don't remain visible in the address bar.
     function buildShareUrl(s, q) {
       const u = new URL('question.html', location.href);
-      if (s && s.trim()) u.searchParams.set('sender', s.trim());
-      if (q && q.trim()) u.searchParams.set('question', q.trim());
+      const payloadObj = { s: (s || '').trim(), q: (q || '').trim() };
+      try {
+        // encode UTF-8 safe base64
+        const json = JSON.stringify(payloadObj);
+        const base64 = btoa(unescape(encodeURIComponent(json)));
+        u.searchParams.set('payload', base64);
+      } catch (e) {
+        // fallback to plain encoded components if base64 fails
+        u.searchParams.set('sender', encodeURIComponent(payloadObj.s));
+        u.searchParams.set('question', encodeURIComponent(payloadObj.q));
+      }
       return u.toString();
     }
 
