@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Invite — Yes/No Question Share</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page center-viewport">
+    <div class="card fade-in float">
+      <h1>Yes/No Questions</h1>
+      <p id="preview" class="question hint" aria-hidden="true"></p>
+
+      <form id="senderForm" class="sender-form fade-scale" onsubmit="return false;" style="--delay:0.2s">
+        <div class="form-group">
+          <label class="sr-only" for="senderInput">Your name</label>
+          <input id="senderInput" class="share-input" placeholder="Your name (e.g. Alice)" aria-label="Sender name"
+                 autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="form-group">
+          <label class="sr-only" for="questionInput">Question</label>
+          <input id="questionInput" class="share-input" placeholder="Your yes/no question" aria-label="Question"
+                 autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="button-group">
+          <button id="generateBtn" class="btn primary pulse" type="button">Generate Link</button>
+        </div>
+      </form>
+
+      <div class="share-section">
+        <div class="share">
+          <input id="shareInput" class="share-input" readonly aria-label="Shareable link" placeholder="Generated link will appear here">
+          <button id="copyBtn" class="btn">Copy link</button>
+          <button id="askBtn" class="btn" type="button">Open</button>
+        </div>
+      </div>
+
+      <p class="hint">Tip: enter your name and question, click Generate Link, then copy and share the link.</p>
+    </div>
+  </div>
+
+  <script>
+    // helper to get params and decode
+    const params = new URLSearchParams(location.search);
+    const initialSender = params.get('sender') || '';
+    const initialQuestion = params.get('question') || '';
+
+  const preview = document.getElementById('preview');
+  const askBtn = document.getElementById('askBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareInput = document.getElementById('shareInput');
+    const senderInput = document.getElementById('senderInput');
+    const questionInput = document.getElementById('questionInput');
+    const generateBtn = document.getElementById('generateBtn');
+
+    // populate inputs if params provided
+    if (initialSender) senderInput.value = initialSender;
+    if (initialQuestion) questionInput.value = initialQuestion;
+
+    function updateInvitePreview(s, q) {
+      const who = s && s.trim() ? s.trim() : 'Someone';
+      // Update preview only if there's a question
+      if (q && q.trim()) {
+        preview.textContent = `${who} asks: "${q.trim()}"`;
+      } else {
+        preview.textContent = '';
+      }
+    }
+
+    updateInvitePreview(senderInput.value || initialSender, questionInput.value || initialQuestion);
+
+    // Build a direct link to the question page (question.html) with encoded params.
+    function buildShareUrl(s, q) {
+      const u = new URL('question.html', location.href);
+      if (s && s.trim()) u.searchParams.set('sender', s.trim());
+      if (q && q.trim()) u.searchParams.set('question', q.trim());
+      return u.toString();
+    }
+
+    // When Generate Link is clicked, create the link and place it in the share input
+    generateBtn.addEventListener('click', () => {
+      const s = senderInput.value;
+      const q = questionInput.value;
+      if (!s || !s.trim() || !q || !q.trim()) {
+        // simple validation
+        generateBtn.textContent = 'Fill both fields';
+        setTimeout(() => generateBtn.textContent = 'Generate Link', 1400);
+        return;
+      }
+      const url = buildShareUrl(s, q);
+      shareInput.value = url;
+      updateInvitePreview(s, q);
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      if (!shareInput.value) {
+        // fallback: generate from current inputs
+        const url = buildShareUrl(senderInput.value, questionInput.value);
+        shareInput.value = url;
+      }
+      try {
+        await navigator.clipboard.writeText(shareInput.value);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy link', 1400);
+      } catch (e) {
+        shareInput.select();
+        document.execCommand('copy');
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy link', 1400);
+      }
+    });
+
+    // Open button should open the direct question page (or generate it first)
+    askBtn.addEventListener('click', () => {
+      if (!shareInput.value) {
+        // generate from inputs
+        const s = senderInput.value || initialSender || '';
+        const q = questionInput.value || initialQuestion || '';
+        shareInput.value = buildShareUrl(s, q);
+        updateInvitePreview(s, q);
+      }
+      try { window.open(shareInput.value, '_blank'); } catch (e) { location.href = shareInput.value; }
+    });
+
+    // make the share input clickable to open the link if present
+    shareInput.addEventListener('click', () => {
+      if (shareInput.value) {
+        try { window.open(shareInput.value, '_blank'); } catch (e) { location.href = shareInput.value; }
+      }
+    });
+
+    // allow Enter to generate link when in question input
+    questionInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') generateBtn.click(); });
+  </script>
+</body>
+</html>
