@@ -45,8 +45,9 @@
   <script>
     // helper to get params and decode
     const params = new URLSearchParams(location.search);
-    const initialSender = params.get('sender') || '';
-    const initialQuestion = params.get('question') || '';
+  // Hide any user details passed via URL: do not prefill from URL params
+  const initialSender = '';
+  const initialQuestion = '';
 
   const preview = document.getElementById('preview');
   const askBtn = document.getElementById('askBtn');
