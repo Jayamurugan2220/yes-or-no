@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Results — My Questions</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .results-container { max-width: 600px; margin: 0 auto; }
+    .result-card { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      padding: 16px; 
+      margin: 12px 0; 
+      border-radius: 12px; 
+      color: white; 
+    }
+    .result-header { font-weight: bold; font-size: 16px; margin-bottom: 10px; }
+    .result-question { font-size: 14px; margin: 8px 0; opacity: 0.95; }
+    .result-stats { display: flex; gap: 16px; margin-top: 12px; }
+    .stat { flex: 1; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: bold; }
+    .stat-label { font-size: 12px; opacity: 0.9; }
+    .yes-stat { background: rgba(52, 211, 153, 0.3); padding: 8px; border-radius: 8px; }
+    .no-stat { background: rgba(239, 68, 68, 0.3); padding: 8px; border-radius: 8px; }
+    .empty-message { text-align: center; margin: 40px 0; color: #999; }
+    .back-link { display: inline-block; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="page center-viewport">
+    <div class="card fade-in">
+      <h1>📊 Your Question Results 📊</h1>
+      <p class="hint">Check the answers to your questions below:</p>
+      
+      <div id="resultsList" class="results-container">
+        <div class="empty-message">Loading your questions...</div>
+      </div>
+
+      <div class="back-link" style="text-align: center;">
+        <a href="index.html" class="btn primary">Create Another Question ➕</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function displayResults() {
+      const resultsList = document.getElementById('resultsList');
+      const results = [];
+
+      // Scan localStorage for all tracked questions
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('tracking_')) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data.sender || data.question) {
+              results.push(data);
+            }
+          } catch (e) { }
+        }
+      }
+
+      if (results.length === 0) {
+        resultsList.innerHTML = '<div class="empty-message">No questions tracked yet.<br><br>Create a question and share it to see results! 🎯</div>';
+        return;
+      }
+
+      // Render each question with answer counts
+      let html = '';
+      results.forEach((result, idx) => {
+        const yesCount = (result.answers || []).filter(a => a.answer === 'yes').length;
+        const noCount = (result.answers || []).filter(a => a.answer === 'no').length;
+        const total = yesCount + noCount;
+
+        html += `
+          <div class="result-card">
+            <div class="result-header">${result.sender || 'Anonymous'}</div>
+            <div class="result-question">❓ ${result.question || 'Question'}</div>
+            <div class="result-stats">
+              <div class="stat yes-stat">
+                <div class="stat-value">✅ ${yesCount}</div>
+                <div class="stat-label">Yes</div>
+              </div>
+              <div class="stat no-stat">
+                <div class="stat-value">❌ ${noCount}</div>
+                <div class="stat-label">No</div>
+              </div>
+              <div class="stat" style="background: rgba(168, 85, 247, 0.2); padding: 8px; border-radius: 8px;">
+                <div class="stat-value">${total}</div>
+                <div class="stat-label">Total</div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      resultsList.innerHTML = html;
+    }
+
+    // Display results on page load
+    displayResults();
+
+    // Refresh results every 3 seconds (so sender can see live updates)
+    setInterval(displayResults, 3000);
+  </script>
+</body>
+</html>

@@ -138,24 +138,48 @@
       if (getComputedStyle(noBtn).position === 'absolute') moveNo();
     }, 80));
 
+    function recordAnswer(answer) {
+      // Generate a unique ID for this question based on sender + question
+      const questionId = btoa(sender + '|' + question).substring(0, 10);
+      
+      // Get or initialize the tracking object for this question
+      let tracking = {};
+      try {
+        const stored = localStorage.getItem('tracking_' + questionId);
+        if (stored) tracking = JSON.parse(stored);
+      } catch (e) { }
+      
+      // Store question metadata and answers
+      if (!tracking.sender) tracking.sender = sender;
+      if (!tracking.question) tracking.question = question;
+      if (!tracking.answers) tracking.answers = [];
+      
+      // Record this answer (anonymized by timestamp)
+      tracking.answers.push({
+        answer: answer,
+        timestamp: Date.now()
+      });
+      
+      // Save back to localStorage
+      try {
+        localStorage.setItem('tracking_' + questionId, JSON.stringify(tracking));
+      } catch (e) { }
+    }
+
     yesBtn.addEventListener('click', () => {
+      recordAnswer('yes');
       alert('Thanks for answering!');
       try { window.close(); } catch (e) { /* ignore */ }
       yesBtn.disabled = true;
       noBtn.disabled = true;
+      
+      // Redirect to thanks page
+      const thanksUrl = new URL('thanks.html', location.href).toString();
+      setTimeout(() => { location.href = thanksUrl; }, 500);
+    });
 
-      // Render a friendly thank-you screen with a "Create your own" action
-      const indexUrl = new URL('index.html', location.href).toString();
-      document.body.innerHTML = `
-        <div class="page center-viewport">
-          <div class="card fade-in">
-            <h2>Thanks!</h2>
-            <p class="question">Your answer was received.</p>
-            <div style="margin-top:18px">
-              <a href="${indexUrl}" class="btn primary">Create your own</a>
-            </div>
-          </div>
-        </div>`;
+    noBtn.addEventListener('click', () => {
+      recordAnswer('no');
     });
 
   // initial placement: do nothing so buttons stay in normal flow until interaction

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Thanks! 🎉</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page center-viewport">
+    <div class="card fade-in">
+      <h2 class="celebration-title">🎉 Thanks for answering! 🎉</h2>
+      <p class="question celebration-text">Your answer has been recorded! ✨</p>
+      
+      <div class="celebration-emojis">
+        <span class="emoji">🎈</span>
+        <span class="emoji">🎊</span>
+        <span class="emoji">🌟</span>
+      </div>
+
+      <div style="margin-top: 24px; text-align: center;">
+        <p class="hint">Want to create your own question?</p>
+        <a href="index.html" class="btn primary celebration-btn">Create Your Own 🎯</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Confetti animation
+    function createConfetti() {
+      const colors = ['#FFD700', '#FF6B9D', '#4ECDC4', '#45B7D1', '#FFA502', '#FF1654'];
+      const confetti = document.createElement('div');
+      confetti.style.position = 'fixed';
+      confetti.style.left = Math.random() * window.innerWidth + 'px';
+      confetti.style.top = '-10px';
+      confetti.style.width = '10px';
+      confetti.style.height = '10px';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.borderRadius = '50%';
+      confetti.style.opacity = '0.8';
+      confetti.style.zIndex = '9999';
+      confetti.style.pointerEvents = 'none';
+      document.body.appendChild(confetti);
+
+      const duration = 2000 + Math.random() * 1000;
+      const keyframes = [
+        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+        { transform: `translateY(${window.innerHeight}px) rotate(${360 * Math.random()}deg)`, opacity: 0 }
+      ];
+      
+      confetti.animate(keyframes, {
+        duration: duration,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        fill: 'forwards'
+      });
+
+      setTimeout(() => confetti.remove(), duration);
+    }
+
+    // Create confetti burst
+    for (let i = 0; i < 30; i++) {
+      setTimeout(() => createConfetti(), i * 50);
+    }
+
+    // Emoji bounce animation
+    document.querySelectorAll('.emoji').forEach(emoji => {
+      emoji.style.display = 'inline-block';
+      emoji.style.animation = 'bounce 0.6s ease-in-out infinite';
+      emoji.style.marginRight = '8px';
+    });
+  </script>
+</body>
+</html>
