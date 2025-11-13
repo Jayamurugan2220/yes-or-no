@@ -6,6 +6,183 @@
   <title>Invite — Yes/No Question Share</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+<script>
+(function () {
+  // Elements
+  const container = document.getElementById('lovable-share');
+  if (!container) return;
+  const input = document.getElementById('lovable-share-input');
+  const generateBtn = document.getElementById('lovable-generate-btn');
+  const actions = document.getElementById('lovable-actions');
+  const copyBtn = document.getElementById('lovable-copy-btn');
+  const openBtn = document.getElementById('lovable-open-btn');
+  const statusWrap = document.getElementById('lovable-status');
+  const statusText = document.getElementById('lovable-status-text');
+
+  // Helper UI
+  function setStatus(text, show = true) {
+    statusText.textContent = text || '';
+    statusWrap.style.display = show && text ? '' : 'none';
+  }
+  function showSpinnerOn(btn, text) {
+    btn.disabled = true;
+    const sp = document.createElement('span');
+    sp.className = 'lovable-spinner';
+    sp.setAttribute('aria-hidden', 'true');
+    btn.prepend(sp);
+    if (text) btn.append(` ${text}`);
+    return sp;
+  }
+  function clearSpinnerOn(btn, spinner) {
+    btn.disabled = false;
+    if (spinner && spinner.parentNode) spinner.remove();
+    // remove appended text nodes added above (best-effort)
+    btn.childNodes.forEach(n => {
+      if (n.nodeType === Node.TEXT_NODE && n.nodeValue.trim() === '') n.remove();
+    });
+  }
+
+  // Copy helper
+  async function copyToClipboard(text) {
+    if (!text) return false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return !!ok;
+      }
+    } catch (e) { return false; }
+  }
+
+  // Main: obtain share link
+  // This function tries multiple strategies:
+  // 1) If your site provides window.createShareLink() and it returns a Promise that resolves to the link, it will be used.
+  // 2) Else if there is an existing share-input value in the page (with id 'shareInput' or class 'share-input' and not empty),
+  //    it will be used as a link or a key to build a link.
+  // 3) Else fallback: current page URL (location.href).
+  async function obtainShareLink() {
+    // 1) try existing generator
+    if (typeof window.createShareLink === 'function') {
+      // user-provided generator expected to return Promise<string> or string
+      try {
+        const res = window.createShareLink();
+        return (res instanceof Promise) ? await res : res;
+      } catch (e) {
+        console.warn('createShareLink failed:', e);
+      }
+    }
+
+    // 2) try reading an existing share input value (common patterns)
+    const existing = document.querySelector('.share-input, #shareInput, input[data-share-key]');
+    if (existing && existing.value && existing.value.trim()) {
+      const val = existing.value.trim();
+      // if looks like full URL, return it; else build a friendly link
+      if (/^https?:\/\//i.test(val)) return val;
+      try {
+        // assume it's a key; craft a link to question page with key param
+        const u = new URL(location.href);
+        // adapt to your app: change pathname if you need
+        u.pathname = '/question.html';
+        u.searchParams.set('id', val);
+        return u.toString();
+      } catch (e) {
+        return val;
+      }
+    }
+
+    // 3) fallback: use current page URL
+    return location.href;
+  }
+
+  // UI: when link ready, reveal copy/open
+  function revealActions(link) {
+    if (!link) return;
+    input.value = link;
+    actions.style.display = '';
+    copyBtn.disabled = false;
+    openBtn.disabled = false;
+    setStatus('Link generated — you can copy or open it.');
+  }
+
+  // Bind events
+  generateBtn.addEventListener('click', async function () {
+    // prevent double click
+    if (this.disabled) return;
+    setStatus('', false);
+    // hide actions until link is ready
+    actions.style.display = 'none';
+    input.value = '';
+    // show spinner on button
+    const spinner = showSpinnerOn(this, 'Generating…');
+
+    // attempt to obtain link
+    let link;
+    try {
+      link = await obtainShareLink();
+    } catch (e) {
+      console.error(e);
+      link = null;
+    }
+
+    // small delay to make UX smoother if generation is instantaneous
+    await new Promise(r => setTimeout(r, 300));
+
+    clearSpinnerOn(this, spinner);
+
+    if (!link) {
+      setStatus('Failed to create link. Try again.', true);
+      return;
+    }
+    revealActions(link);
+  });
+
+  copyBtn.addEventListener('click', async function () {
+    const link = input.value && input.value.trim();
+    if (!link) return setStatus('No link to copy.', true);
+    this.disabled = true;
+    const ok = await copyToClipboard(link);
+    this.disabled = false;
+    setStatus(ok ? 'Copied to clipboard ✅' : 'Copy failed — try manually.', true);
+    // brief success highlight
+    if (ok) {
+      this.classList.add('pulse');
+      setTimeout(()=> this.classList.remove('pulse'), 900);
+    }
+  });
+
+  openBtn.addEventListener('click', function () {
+    const link = input.value && input.value.trim();
+    if (!link) return setStatus('No link to open.', true);
+    window.open(link, '_blank', 'noopener,noreferrer');
+  });
+
+  // keep actions hidden initially
+  actions.style.display = 'none';
+  setStatus('', false);
+
+  // If a link already exists in the DOM on load (some sites pre-generate), reveal it.
+  (async function checkExistingOnLoad(){
+    // small delay allowing other scripts to populate share inputs if they run on load
+    await new Promise(r => setTimeout(r, 300));
+    const maybe = await obtainShareLink();
+    // treat current page as non-generated — only reveal if it clearly looks like a generated share (contains id or short token)
+    if (maybe && maybe !== location.href) {
+      revealActions(maybe);
+    }
+  })();
+
+})();
+</script>
+
 <body>
   <div class="page center-viewport">
     <div class="card fade-in float">

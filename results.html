@@ -26,6 +26,193 @@
     .back-link { display: inline-block; margin: 20px 0; }
   </style>
 </head>
+<!-- R-Chat Feature (add this at the end of results.html, before </body>) -->
+<style>
+  /* R-chat mini-styles (keeps visual harmony with your site) */
+  #rchatWrap { max-width:700px; margin:18px auto 46px; font-family: Inter, system-ui, sans-serif; z-index:12; position:relative; }
+  #rchatControls { display:flex; gap:10px; justify-content:center; margin-bottom:12px; }
+  #rchatBtn { padding:8px 14px; border-radius:10px; border:none; cursor:pointer; background:linear-gradient(90deg,#7c3aed,#06b6d4); color:#fff; font-weight:600; }
+  #rchatClear { padding:8px 12px; border-radius:10px; border:1px solid rgba(0,0,0,0.06); background:#fff; cursor:pointer; }
+  #rchat { background: rgba(255,255,255,0.03); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.04); min-height:120px; max-height:360px; overflow:auto; }
+  .rmsg { display:flex; gap:8px; margin:8px 0; align-items:flex-start; }
+  .ruser, .rbot { padding:10px 12px; border-radius:10px; max-width:84%; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:13px; line-height:1.35; }
+  .ruser { margin-left:auto; background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); color:#fff; border:1px solid rgba(255,255,255,0.03); }
+  .rbot { background: rgba(0,0,0,0.45); color:#e6eef8; border:1px solid rgba(255,255,255,0.03); }
+  .rconsole { background:#0b1220; color:#d1e8ff; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:13px; white-space:pre; }
+  .typing-dot { display:inline-block; width:8px; height:8px; margin-right:4px; background:#9fbff7; border-radius:50%; opacity:.9; animation: rdot 1s infinite; }
+  .typing-dot:nth-child(2){ animation-delay:.12s } .typing-dot:nth-child(3){ animation-delay:.24s }
+  @keyframes rdot { 0%{ transform:translateY(0); opacity:.25 } 50%{ transform:translateY(-6px); opacity:1 } 100%{ transform:translateY(0); opacity:.25 } }
+  @media (max-width:720px){ #rchatWrap{ padding:0 12px } .ruser,.rbot{ max-width:100% } }
+</style>
+
+<div id="rchatWrap" aria-live="polite">
+  <div id="rchatControls">
+    <button id="rchatBtn" type="button">Show R Chat Analysis</button>
+    <button id="rchatClear" type="button">Clear Chat</button>
+  </div>
+  <div id="rchat" role="log" aria-atomic="false" aria-live="polite">
+    <!-- chat messages will appear here -->
+  </div>
+</div>
+
+<script>
+(function () {
+  // Helper: scan localStorage for tracking_... (reuses your displayResults logic)
+  function loadResultsFromLocalStorage() {
+    const results = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith('tracking_')) continue;
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        if (data && (data.sender || data.question)) results.push(data);
+      } catch (e) { /* ignore invalid */ }
+    }
+    return results;
+  }
+
+  // Format an R command string for a single question
+  function buildRCommandsFor(result, idx) {
+    // Prepare safe R string literals (escape single quotes)
+    const sender = (result.sender || 'Anonymous').replace(/'/g, "\\'");
+    const question = (result.question || 'Question').replace(/'/g, "\\'");
+    // We will show a small R snippet: create a small data.frame and compute table()
+    const r = [
+      `# Question ${idx+1} — by '${sender}'`,
+      `q <- '${question}'`,
+      `answers <- c(${(result.answers || []).map(a => (a.answer || '').toLowerCase() === 'yes' ? "'yes'" : (a.answer || "'no'")).join(', ') || ''})`,
+      `# count yes/no`,
+      `table(answers)`,
+      `# proportion (yes / total)`,
+      `prop.table(table(answers))`
+    ].join('\\n');
+    return r;
+  }
+
+  // Compute outputs (actual counts) for the R snippet using JS (we'll format to look like R console)
+  function computeROutputsFor(result) {
+    const arr = Array.isArray(result.answers) ? result.answers.map(a => String(a.answer || '').toLowerCase()) : [];
+    const yes = arr.filter(v => v === 'yes' || v === 'y' || v === 'true').length;
+    const no = arr.filter(v => v === 'no' || v === 'n' || v === 'false').length;
+    const total = yes + no;
+    // Build R-style console lines
+    // E.g.
+    // answers
+    // yes  no 
+    //  3    1 
+    const tableHeader = 'answers';
+    // produce table lines
+    const keyLine = `yes  no`;
+    const valLine = `${yes.toString().padStart(3)} ${no.toString().padStart(4)}`;
+    const propYes = total === 0 ? 0 : (yes/total);
+    const propNo = total === 0 ? 0 : (no/total);
+    const pctLine = `yes     no\n${propYes.toFixed(3).padStart(5)} ${propNo.toFixed(3).padStart(6)}`;
+    return {
+      tableText: `${keyLine}\n${valLine}`,
+      propText: pctLine,
+      summary: `Total: ${total}  •  Yes: ${yes}  •  No: ${no}`
+    };
+  }
+
+  // UI helpers to append chat bubbles
+  const rchat = document.getElementById('rchat');
+  function scrollChatToBottom(){ rchat.scrollTop = rchat.scrollHeight; }
+  function appendUser(msg) {
+    const wrap = document.createElement('div'); wrap.className = 'rmsg';
+    const bubble = document.createElement('div'); bubble.className = 'ruser';
+    bubble.textContent = msg;
+    wrap.appendChild(bubble);
+    rchat.appendChild(wrap);
+    scrollChatToBottom();
+    return bubble;
+  }
+  function appendBotTyping() {
+    const wrap = document.createElement('div'); wrap.className = 'rmsg';
+    const bubble = document.createElement('div'); bubble.className = 'rbot';
+    bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    wrap.appendChild(bubble);
+    rchat.appendChild(wrap);
+    scrollChatToBottom();
+    return { wrap, bubble };
+  }
+  function replaceBotWithConsole(botWrap, consoleText) {
+    botWrap.innerHTML = '';
+    const pre = document.createElement('div');
+    pre.className = 'rconsole';
+    pre.textContent = consoleText;
+    botWrap.appendChild(pre);
+    scrollChatToBottom();
+  }
+
+  // Main: show R chat for all stored questions
+  async function showRChat() {
+    const results = loadResultsFromLocalStorage();
+    if (!results || results.length === 0) {
+      appendBotTyping(); // quick message
+      setTimeout(()=> {
+        rchat.lastElementChild.querySelector('.rbot').innerHTML = '<div class="rconsole"># No tracked questions found in localStorage.\n# Create a question and collect answers first.</div>';
+        scrollChatToBottom();
+      }, 500);
+      return;
+    }
+
+    // For each result, show R prompt (user) then bot typing then console output
+    for (let i=0;i<results.length;i++){
+      const res = results[i];
+      const rcmd = buildRCommandsFor(res, i);
+      const userBubble = appendUser(rcmd.replace(/\\n/g, '\n')); // show R code as sent by user
+
+      // show typing animation for bot
+      const bot = appendBotTyping();
+      // simulate "thinking" time proportional to data size
+      const delay = Math.min(1200 + ((res.answers || []).length * 120), 2200);
+      await new Promise(r => setTimeout(r, delay));
+
+      // compute outputs and replace typing with console-style results
+      const out = computeROutputsFor(res);
+      const consoleText = [
+        '# table(answers)',
+        out.tableText,
+        '',
+        '# prop.table(table(answers))',
+        out.propText,
+        '',
+        `# summary: ${out.summary}`
+      ].join('\\n');
+
+      // replace bot bubble with formatted console output
+      replaceBotWithConsole(bot.bubble, consoleText);
+      // small spacing
+      await new Promise(r => setTimeout(r, 180));
+    }
+
+    // final bot message offering a suggestion
+    const finalBot = appendBotTyping();
+    await new Promise(r => setTimeout(r, 700));
+    replaceBotWithConsole(finalBot.bubble, "# Tip: You can copy the R commands above into an R session to reproduce this analysis.\n# Example: run the `table(answers)` and `prop.table()` to see counts and proportions.");
+  }
+
+  // Clear chat
+  function clearChat() { rchat.innerHTML = ''; }
+
+  // Bind controls
+  document.getElementById('rchatBtn').addEventListener('click', function () {
+    // append small marker that user triggered it
+    // avoid duplicate huge replays: clear first for clarity
+    clearChat();
+    showRChat();
+  });
+  document.getElementById('rchatClear').addEventListener('click', function () {
+    clearChat();
+  });
+
+  // Optionally: if results update (your interval), we can auto-update chat: keep disabled to avoid surprising users.
+  // If you want auto-refreshed R-chat, uncomment below:
+  // setInterval(() => { /* if chat visible and non-empty, refresh */ }, 5000);
+
+})();
+</script>
+
 <body>
   <div class="page center-viewport">
     <div class="card fade-in">
