@@ -1,5 +1,5 @@
 /* styles.css — Lovable-inspired theme adapted for your existing markup
-   Drop this in place of your current styles.css (keeps your HTML unchanged).
+   (original content kept, appended student-friendly styles)
 */
 
 /* ---------- Theme tokens ---------- */
@@ -169,7 +169,6 @@ h1, h2 { margin:0 0 12px 0; font-weight:700; color: var(--accent); letter-spacin
 .btn:active { transform: scale(0.98) translateY(1px); }
 .btn:focus { outline: 3px solid rgba(255,107,157,0.22); outline-offset: 3px; }
 
-/* primary, yes, no — keep same classes for JS to match */
 .primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #fff;
@@ -182,15 +181,13 @@ h1, h2 { margin:0 0 12px 0; font-weight:700; color: var(--accent); letter-spacin
 }
 .yes:hover { box-shadow: 0 12px 40px rgba(34,211,238,0.2); transform: scale(1.04); }
 
-/* .no retains absolute moves from your JS but get visual polish here */
 .no {
   background: linear-gradient(135deg, var(--danger), #ff7675);
   color: #fff;
   font-weight: 700;
-  position: absolute; /* your JS toggles absolute when moving */
+  position: absolute;
 }
 
-/* focus & accessibility */
 .btn:focus-visible { box-shadow: 0 10px 28px rgba(255,107,157,0.12); }
 
 /* ---------- Forms and share UI (matches your markup) ---------- */
@@ -200,7 +197,6 @@ h1, h2 { margin:0 0 12px 0; font-weight:700; color: var(--accent); letter-spacin
 .share-section { margin-top:24px; padding-top:20px; border-top: 1px solid rgba(226,232,240,0.1); }
 .share { display:flex; gap:12px; justify-content:center; max-width:480px; margin:0 auto; align-items:center; }
 
-/* share input */
 .share-input {
   width:100%; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,107,157,0.28);
   background: var(--card-bg); font-size:0.95rem; transition: all 0.18s ease; box-shadow: 0 2px 6px rgba(255,107,157,0.06);
@@ -208,7 +204,6 @@ h1, h2 { margin:0 0 12px 0; font-weight:700; color: var(--accent); letter-spacin
 .share-input:hover { border-color: rgba(255,107,157,0.5); background: #fffdf8; }
 .share-input:focus { outline:none; border-color: var(--accent); background: #ffffff; box-shadow:0 6px 18px rgba(255,107,157,0.12); }
 
-/* controls container used in index.html */
 .controls { display:flex; gap:12px; align-items:center; justify-content:center; margin-top:12px; }
 
 /* ---------- Results page specific styles (keeps your HTML structure) ---------- */
@@ -233,28 +228,22 @@ h1, h2 { margin:0 0 12px 0; font-weight:700; color: var(--accent); letter-spacin
 .yes-stat { background: linear-gradient(180deg, rgba(52,211,153,0.12), rgba(52,211,153,0.06)); border: 1px solid rgba(52,211,153,0.12); }
 .no-stat { background: linear-gradient(180deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06)); border: 1px solid rgba(239,68,68,0.12); }
 
-/* empty message */
 .empty-message { text-align:center; margin: 40px 0; color: rgba(255,255,255,0.75); font-size:15px; }
 
-/* back link / small buttons */
 .back-link { display:inline-block; margin:20px 0; }
 
-/* ---------- Thank-you page (celebration) ---------- */
 .celebration-title { font-size:1.8rem; animation: heartbeat 0.8s ease-in-out infinite; color: var(--accent); }
 .celebration-text { font-size:1.1rem; color: #c44569; font-weight:500; }
 .celebration-btn { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
 
-/* emojis */
 .celebration-emojis { margin:20px 0; font-size:2rem; letter-spacing:12px; }
 .emoji { display:inline-block; animation: bounce 0.6s ease-in-out infinite; margin:0 4px; }
 .emoji:nth-child(1) { animation-delay:0s; }
 .emoji:nth-child(2) { animation-delay:0.12s; }
 .emoji:nth-child(3) { animation-delay:0.24s; }
 
-/* small helpers */
 .code { font-family: var(--mono, monospace); background:#f3f4f6; padding:4px 8px; border-radius:6px; }
 
-/* accent text */
 .accent-text {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -277,10 +266,84 @@ h1, h2 { margin:0 0 12px 0; font-weight:700; color: var(--accent); letter-spacin
 #lovable-generate-btn { min-width:120px; }
 #lovable-actions .btn { min-width:110px; }
 
-/* spinner used inline by JS via class toggle */
 .lovable-spinner {
   display:inline-block;
   width:16px;height:16px;border:2px solid rgba(0,0,0,0.08); border-top-color: rgba(0,0,0,0.18);
   border-radius:50%; animation: lovable-spin 0.9s linear infinite; margin-right:8px; vertical-align:middle;
 }
 @keyframes lovable-spin { to { transform: rotate(360deg); } }
+
+/* ---------- STUDENT-FRIENDLY GRAPH BEAUTY (appended) ---------- */
+
+/* Playful student theme for R Graph */
+#rgraphWrap { font-family: 'Poppins', Inter, system-ui, sans-serif; max-width:920px; margin:18px auto 60px; }
+#rgraphCanvas {
+  background: linear-gradient(180deg, rgba(255,245,250,0.9), rgba(255,238,245,0.9));
+  border-radius: 18px;
+  padding:16px;
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 10px 24px rgba(209, 213, 219, 0.35);
+}
+
+/* header & legend friendly style */
+#rgraphTitle { font-size:1.15rem; font-weight:700; color:#222; letter-spacing: -0.01em; }
+#rgraphLegend { margin-top:6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.legend-item { display:flex; gap:8px; align-items:center; font-size:13px; color:#374151; }
+.legend-swatch { width:18px;height:18px;border-radius:6px; box-shadow: 0 6px 12px rgba(99,102,241,0.12), inset 0 -2px 6px rgba(255,255,255,0.08); }
+
+/* pastel swatches */
+.legend-swatch.yes { background: linear-gradient(180deg,#93c5fd,#60a5fa); }
+.legend-swatch.no  { background: linear-gradient(180deg,#ffb3bd,#fb7185); }
+
+/* SVG tweaks: full width bubble */
+#rgraphSVG { width:100%; height:360px; display:block; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.035)); }
+
+/* subtle grid lines, softer */
+#rgraphSVG line { stroke: rgba(34, 34, 34, 0.06); stroke-width:1; }
+
+/* Bar animation (applies when JS adds .grow to rects) */
+.rbar { transform-origin: center bottom; transition: transform 700ms cubic-bezier(.2,.9,.2,1), opacity 520ms; transform: scaleY(0); opacity: 0.01; }
+.rbar.grow { transform: scaleY(1); opacity:1; }
+
+/* bar rounded look already using rx in SVG; add small inner highlight */
+.rbar-highlight { opacity:0.22; }
+
+/* labels above bars in soft color */
+.bar-label { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:12px; fill:#1f2937; }
+
+/* small question labels - wrap friendly styling */
+.rgraphCanvas text.question-label { font-size:12px; fill:#374151; }
+
+/* R code block - playful bubble */
+#rgraphRcode {
+  margin-top:12px;
+  background: linear-gradient(180deg, #fff7fb, #fff3f6);
+  color:#4b2350;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid rgba(196,69,105,0.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+  font-size:13px;
+  white-space:pre-wrap;
+  line-height:1.35;
+  position:relative;
+  box-shadow: 0 10px 22px rgba(198, 88, 127, 0.06);
+}
+
+/* copy button on top-right of code block */
+#rgraphCopyBtn {
+  position:absolute;
+  right:10px; top:10px;
+  background: linear-gradient(90deg,#ff7aa2,#ff9eb8);
+  border: none; color:white; padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:600;
+  box-shadow: 0 8px 20px rgba(255,122,162,0.18);
+}
+#rgraphCopyBtn:active { transform: translateY(1px) }
+
+#rgraphCanvas small { display:block; text-align:center; margin-top:8px; color:#6b7280; font-size:12px; }
+
+@media (max-width:720px) {
+  #rgraphSVG { height:300px; }
+  #rgraphRcode { font-size:12px; padding:10px; }
+  #rgraphTitle { font-size:1rem; }
+}

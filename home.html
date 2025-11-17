@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full Page Image Button</title>
+
+<style>
+  /* Make page take full height */
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  /* Full-page background image */
+  .full-image {
+    background-image: url('WhatsApp Image 2025-11-13 at 13.08.28_5ee13be3.jpg');
+    height: 100%;
+    width: 100%;
+    background-size: cover;     /* auto resize based on device */
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+  }
+
+  /* Button styling */
+  .start-btn {
+    position: absolute;
+    bottom: 40px;   /* distance from bottom */
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 35px;
+    background: #ff5722;
+    color: white;
+    text-decoration: none;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid white;
+  }
+
+  .start-btn:hover {
+    background: #e64a19;
+  }
+</style>
+
+</head>
+<body>
+
+<div class="full-image">
+  <a href="https://yesornofun.netlify.app/" class="start-btn">Start</a>
+</div>
+
+</body>
+</html>
